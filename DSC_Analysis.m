@@ -65,11 +65,12 @@ function DSC_Analysis()
     
     figure('Position', [100, 100, 1400, 900]);
     
-    subplot(2,2,[1,2]);
+    % Top plot - thermogram (now using subplot(2,1,1))
+    subplot(2,1,1);
     plot(temp_heating, heat_flow_heating, 'b-', 'LineWidth', 2);
     xlabel('Temperature (°C)', 'FontSize', 12);
     ylabel('Heat Flow (W/g)', 'FontSize', 12);
-    title('DSC Thermogram - Heating Stage Analysis', 'FontSize', 14, 'FontWeight', 'bold');
+    title('DSC Thermogram', 'FontSize', 14, 'FontWeight', 'bold');
     grid on;
     hold on;
     
@@ -109,19 +110,16 @@ function DSC_Analysis()
     text(0.02, 0.98, param_text, 'Units', 'normalized', 'VerticalAlignment', 'top', ...
          'FontSize', 10, 'BackgroundColor', 'yellow', 'EdgeColor', 'black');
     
-    subplot(2,2,3);
+    subplot(2,1,2);
     temp_smooth = smooth(temp_heating, 10);
     heat_flow_smooth = smooth(heat_flow_heating, 10);
     derivative = gradient(heat_flow_smooth) ./ gradient(temp_smooth);
     
-    plot(temp_smooth, derivative, 'r-', 'LineWidth', 1.5);
-    xlabel('Temperature (°C)', 'FontSize', 11);
-    ylabel('d(Heat Flow)/dT (W/g/°C)', 'FontSize', 11);
-    title('Derivative Analysis', 'FontSize', 12, 'FontWeight', 'bold');
+    plot(temp_smooth, derivative, 'r-', 'LineWidth', 2);
+    xlabel('Temperature (°C)', 'FontSize', 12);
+    ylabel('d(Heat Flow)/dT (W/g/°C)', 'FontSize', 12);
+    title('Derivative Analysis', 'FontSize', 14, 'FontWeight', 'bold');
     grid on;
-    
-    subplot(2,2,4);
-    axis off;
     
     create_comprehensive_results_table(transition_results, heating_rate);
     
@@ -137,7 +135,6 @@ function DSC_Analysis()
         fprintf('  - Onset (Tg_onset): %.2f°C\n', transition_results.Tg_onset);
         fprintf('  - Peak (Tg_peak): %.2f°C\n', transition_results.Tg_peak);
         fprintf('  - Heat Capacity Change (ΔCp): %.4f W/g/°C\n', transition_results.Tg_delta_cp);
-        fprintf('  - Integral: %.2f J/g\n', transition_results.Tg_integral);
         fprintf('  - Method: ISO 11357 (inflection point)\n');
         fprintf('  - Peak Type: Step change\n');
     else
@@ -149,9 +146,7 @@ function DSC_Analysis()
         fprintf('Crystallization Temperature:\n');
         fprintf('  - Onset (Tc_onset): %.2f°C\n', transition_results.Tc_onset);
         fprintf('  - Peak (Tc_peak): %.2f°C\n', transition_results.Tc_peak);
-        fprintf('  - Crystallization Enthalpy (ΔHc): %.2f J/g\n', transition_results.Tc_enthalpy);
-        fprintf('  - Integral: %.2f J/g\n', transition_results.Tc_integral);
-        fprintf('  - Peak Type: Endothermic\n');
+        fprintf('  - Peak Type: Exothermic\n');
         fprintf('  - Method: Peak maximum detection\n');
     else
         fprintf('Crystallization Temperature: Not detected\n');
@@ -162,9 +157,7 @@ function DSC_Analysis()
         fprintf('Melting Temperature:\n');
         fprintf('  - Onset (Tm_onset): %.2f°C\n', transition_results.Tm_onset);
         fprintf('  - Peak (Tm_peak): %.2f°C\n', transition_results.Tm_peak);
-        fprintf('  - Melting Enthalpy (ΔHm): %.2f J/g\n', transition_results.Tm_enthalpy);
-        fprintf('  - Integral: %.2f J/g\n', transition_results.Tm_integral);
-        fprintf('  - Peak Type: Exothermic\n');
+        fprintf('  - Peak Type: Endothermic\n');
         fprintf('  - Method: Peak minimum detection\n');
     else
         fprintf('Melting Temperature: Not detected\n');
@@ -183,9 +176,9 @@ function transition_results = analyze_thermal_transitions(temperature, heat_flow
     
     transition_results = struct();
     
-    fields = {'Tg_onset', 'Tg_peak', 'Tg_delta_cp', 'Tg_integral', 'Tg_method', 'Tg_type', ...
-              'Tc_onset', 'Tc_peak', 'Tc_enthalpy', 'Tc_integral', 'Tc_method', 'Tc_type', ...
-              'Tm_onset', 'Tm_peak', 'Tm_enthalpy', 'Tm_integral', 'Tm_method', 'Tm_type'};
+    fields = {'Tg_onset', 'Tg_peak', 'Tg_delta_cp', 'Tg_method', 'Tg_type', ...
+              'Tc_onset', 'Tc_peak', 'Tc_method', 'Tc_type', ...
+              'Tm_onset', 'Tm_peak', 'Tm_method', 'Tm_type'};
     
     for i = 1:length(fields)
         if contains(fields{i}, 'method') || contains(fields{i}, 'type')
@@ -215,7 +208,6 @@ function transition_results = analyze_thermal_transitions(temperature, heat_flow
                 baseline_before_range = max(1, tg_idx-40):tg_idx-20;
                 baseline_after_range = tg_idx+20:min(length(temp_smooth), tg_idx+40);
                 
- 
                 baseline_before = mean(heat_flow_smooth(baseline_before_range));
                 baseline_after = mean(heat_flow_smooth(baseline_after_range));
                 
@@ -241,15 +233,6 @@ function transition_results = analyze_thermal_transitions(temperature, heat_flow
                 end
                 
                 transition_results.Tg_delta_cp = baseline_after - baseline_before;
-                
-                integration_range = find(temp_smooth >= transition_results.Tg_onset & temp_smooth <= transition_results.Tg_peak + 10);
-                if ~isempty(integration_range)
-                    baseline_integration = linspace(baseline_before, baseline_after, length(integration_range));
-                    corrected_hf = heat_flow_smooth(integration_range) - baseline_integration';
-                    
-                    dt = mean(diff(temp_smooth(integration_range))) / (heating_rate/60);
-                    transition_results.Tg_integral = trapz(corrected_hf) * dt * (heating_rate/60);
-                end
             end
         end
     end
@@ -273,11 +256,8 @@ function transition_results = analyze_thermal_transitions(temperature, heat_flow
                 transition_results.Tc_method = 'Peak maximum detection';
                 transition_results.Tc_type = 'Endothermic';
                 
-                [onset, enthalpy, integral] = calculate_improved_transition_parameters(...
-                    temp_smooth, heat_flow_smooth, tc_idx, 1, heating_rate);
+                onset = calculate_onset_temperature(temp_smooth, heat_flow_smooth, tc_idx, 1);
                 transition_results.Tc_onset = onset;
-                transition_results.Tc_enthalpy = abs(enthalpy);
-                transition_results.Tc_integral = integral;
             end
         catch
         end
@@ -303,11 +283,8 @@ function transition_results = analyze_thermal_transitions(temperature, heat_flow
                 transition_results.Tm_method = 'Peak minimum detection';
                 transition_results.Tm_type = 'Exothermic';
                 
-                [onset, enthalpy, integral] = calculate_improved_transition_parameters(...
-                    temp_smooth, heat_flow_smooth, tm_idx, -1, heating_rate);
+                onset = calculate_onset_temperature(temp_smooth, heat_flow_smooth, tm_idx, -1);
                 transition_results.Tm_onset = onset;
-                transition_results.Tm_enthalpy = abs(enthalpy);
-                transition_results.Tm_integral = integral;
             end
         catch
         end
@@ -315,11 +292,9 @@ function transition_results = analyze_thermal_transitions(temperature, heat_flow
     
 end
 
-function [onset_temp, enthalpy, integral] = calculate_improved_transition_parameters(temperature, heat_flow, peak_idx, direction, heating_rate)
+function onset_temp = calculate_onset_temperature(temperature, heat_flow, peak_idx, direction)
     
     onset_temp = NaN;
-    enthalpy = NaN;
-    integral = NaN;
     
     if peak_idx < 50 || peak_idx > length(temperature) - 50
         return;
@@ -374,106 +349,97 @@ function [onset_temp, enthalpy, integral] = calculate_improved_transition_parame
             onset_temp = temp_region(steep_idx) - 5;
         end
     end
-
-    integral_raw = trapz(temp_region, corrected_hf);
-
-    conversion_factor = 60 / heating_rate;
-    
-    integral = integral_raw * conversion_factor;
-    enthalpy = abs(integral);
-    
-    if direction == -1
-        integral = -integral;
-    end
-    
 end
 
 function create_comprehensive_results_table(results, heating_rate)
     
-    title('DSC Analysis Results', 'FontSize', 14, 'FontWeight', 'bold');
+    % Create a figure for the table
+    f = figure('Position', [100, 100, 800, 400], 'MenuBar', 'none', 'ToolBar', 'none');
+    axis off;
     
-    row_labels = {};
-    onset_temps = {};
-    peak_temps = {};
-    enthalpies = {};
-    methods = {};
+    % Title
+    uicontrol('Style', 'text', ...
+              'String', 'DSC Thermal Analysis Results', ...
+              'Position', [20, 350, 760, 40], ...
+              'FontSize', 16, 'FontWeight', 'bold', ...
+              'HorizontalAlignment', 'center');
     
-    row = 1;
+    % Column headers
+    headers = {'Transition', 'Onset', 'Peak', 'Type', 'Method'};
+    for col = 1:length(headers)
+        uicontrol('Style', 'text', ...
+                  'String', headers{col}, ...
+                  'Position', [20 + (col-1)*150, 310, 150, 30], ...
+                  'FontSize', 11, 'FontWeight', 'bold', ...
+                  'HorizontalAlignment', 'center', ...
+                  'BackgroundColor', [0.8 0.8 0.8]);
+    end
+    
+    % Data rows
+    row_height = 30;
+    y_pos = 280;
+    transitions = {};
     
     % Glass Transition
     if ~isnan(results.Tg_peak)
-        row_labels{row} = 'Glass Transition (Tg)';
-        onset_temps{row} = sprintf('%.1f°C', results.Tg_onset);
-        peak_temps{row} = sprintf('%.1f°C', results.Tg_peak);
-        enthalpies{row} = sprintf('ΔCp: %.3f W/g/°C', results.Tg_delta_cp);
-        methods{row} = sprintf('%s | %s', results.Tg_type, results.Tg_method);
-        row = row + 1;
+        transitions{end+1} = {'Glass Transition (Tg)', ...
+                              sprintf('%.1f°C', results.Tg_onset), ...
+                              sprintf('%.1f°C', results.Tg_peak), ...
+                              results.Tg_type, results.Tg_method};
     end
     
     % Crystallization
     if ~isnan(results.Tc_peak)
-        row_labels{row} = 'Crystallization (Tc)';
-        onset_temps{row} = sprintf('%.1f°C', results.Tc_onset);
-        peak_temps{row} = sprintf('%.1f°C', results.Tc_peak);
-        enthalpies{row} = sprintf('ΔH: %.1f J/g', results.Tc_enthalpy);
-        methods{row} = sprintf('%s | %s', results.Tc_type, results.Tc_method);
-        row = row + 1;
+        transitions{end+1} = {'Crystallization (Tc)', ...
+                              sprintf('%.1f°C', results.Tc_onset), ...
+                              sprintf('%.1f°C', results.Tc_peak), ...
+                              results.Tc_type, results.Tc_method};
     end
     
     % Melting
     if ~isnan(results.Tm_peak)
-        row_labels{row} = 'Melting (Tm)';
-        onset_temps{row} = sprintf('%.1f°C', results.Tm_onset);
-        peak_temps{row} = sprintf('%.1f°C', results.Tm_peak);
-        enthalpies{row} = sprintf('ΔH: %.1f J/g', results.Tm_enthalpy);
-        methods{row} = sprintf('%s | %s', results.Tm_type, results.Tm_method);
-        row = row + 1;
+        transitions{end+1} = {'Melting (Tm)', ...
+                              sprintf('%.1f°C', results.Tm_onset), ...
+                              sprintf('%.1f°C', results.Tm_peak), ...
+                              results.Tm_type, results.Tm_method};
     end
     
-    row_labels{row} = 'Heating Rate';
-    onset_temps{row} = '';
-    peak_temps{row} = sprintf('%.1f°C/min', heating_rate);
-    enthalpies{row} = '';
-    methods{row} = '';
-    
-    if ~isempty(row_labels)
-        y_positions = linspace(0.85, 0.05, length(row_labels));
-        
-        text(0.02, 0.95, 'Transition', 'FontWeight', 'bold', 'FontSize', 10);
-        text(0.25, 0.95, 'Onset', 'FontWeight', 'bold', 'FontSize', 10);
-        text(0.38, 0.95, 'Peak', 'FontWeight', 'bold', 'FontSize', 10);
-        text(0.50, 0.95, 'Enthalpy', 'FontWeight', 'bold', 'FontSize', 10);
-        text(0.68, 0.95, 'Type | Method', 'FontWeight', 'bold', 'FontSize', 10);
-        
-        for i = 1:length(row_labels)
-            text(0.02, y_positions(i), row_labels{i}, 'FontSize', 9);
-            text(0.25, y_positions(i), onset_temps{i}, 'FontSize', 9, 'FontWeight', 'bold');
-            text(0.38, y_positions(i), peak_temps{i}, 'FontSize', 9, 'FontWeight', 'bold');
-            text(0.50, y_positions(i), enthalpies{i}, 'FontSize', 9);
-            text(0.68, y_positions(i), methods{i}, 'FontSize', 8);
+    % Add transition rows
+    for row = 1:length(transitions)
+        for col = 1:length(transitions{row})
+            bg_color = [1 1 1];
+            if row == 1, bg_color = [0.9 0.9 1]; end % Light red for Tg
+            if row == 2, bg_color = [0.9 1 0.9]; end % Light green for Tc
+            if row == 3, bg_color = [1 0.9 0.9]; end % Light blue for Tm
+            
+            uicontrol('Style', 'text', ...
+                      'String', transitions{row}{col}, ...
+                      'Position', [20 + (col-1)*150, y_pos, 150, row_height], ...
+                      'FontSize', 10, ...
+                      'HorizontalAlignment', 'center', ...
+                      'BackgroundColor', bg_color);
         end
+        y_pos = y_pos - row_height;
         
-        line([0.02, 0.98], [0.90, 0.90], 'Color', 'black', 'LineWidth', 1);
-        
-    else
-        text(0.5, 0.5, 'No thermal transitions detected', 'HorizontalAlignment', 'center', ...
-             'FontSize', 12, 'Color', 'red');
+        % Add empty row separator
+        y_pos = y_pos - 10;
     end
+    
 end
 
 function save_comprehensive_results(results, heating_rate, filename)
     
     [~, base_name, ~] = fileparts(filename);
-    output_filename = sprintf('%s_DSC_Results_Complete.txt', base_name);
+    output_filename = sprintf('%s_DSC_Results.txt', base_name);
     
     fid = fopen(output_filename, 'w');
     
-    fprintf(fid, '=== COMPREHENSIVE DSC ANALYSIS RESULTS ===\n');
+    fprintf(fid, '=== DSC ANALYSIS RESULTS ===\n');
     fprintf(fid, 'Analysis Date: %s\n', datestr(now));
     fprintf(fid, 'Original Data File: %s\n', filename);
     fprintf(fid, 'Heating Rate: %.1f°C/min\n\n', heating_rate);
     
-    fprintf(fid, 'THERMAL TRANSITIONS (Corrected Peak Assignments):\n');
+    fprintf(fid, 'THERMAL TRANSITIONS:\n');
     fprintf(fid, '================================================\n');
     
     % Glass Transition
@@ -486,28 +452,21 @@ function save_comprehensive_results(results, heating_rate, filename)
     
     % Crystallization
     if ~isnan(results.Tc_peak)
-        fprintf(fid, 'Crystallization (Endothermic Peak):\n');
+        fprintf(fid, 'Crystallization (Exothermic Peak):\n');
         fprintf(fid, '  Onset Temperature: %.2f°C\n', results.Tc_onset);
-        fprintf(fid, '  Peak Temperature: %.2f°C\n', results.Tc_peak);
-        fprintf(fid, '  Enthalpy (ΔHc): %.2f J/g\n', results.Tc_enthalpy);
-        fprintf(fid, '  Integral: %.2f J/g\n\n', results.Tc_integral);
+        fprintf(fid, '  Peak Temperature: %.2f°C\n\n', results.Tc_peak);
     end
     
     % Melting
     if ~isnan(results.Tm_peak)
-        fprintf(fid, 'Melting (Exothermic Peak):\n');
+        fprintf(fid, 'Melting (Endothermic Peak):\n');
         fprintf(fid, '  Onset Temperature: %.2f°C\n', results.Tm_onset);
-        fprintf(fid, '  Peak Temperature: %.2f°C\n', results.Tm_peak);
-        fprintf(fid, '  Enthalpy (ΔHm): %.2f J/g\n', results.Tm_enthalpy);
-        fprintf(fid, '  Integral: %.2f J/g\n\n', results.Tm_integral);
+        fprintf(fid, '  Peak Temperature: %.2f°C\n\n', results.Tm_peak);
     end
     
-    fprintf(fid, 'Note: Peak assignments have been corrected:\n');
-    fprintf(fid, '- Crystallization: Endothermic peak (upward)\n');
-    fprintf(fid, '- Melting: Exothermic peak (downward)\n');
-    fprintf(fid, '\nAnalysis completed using corrected DSC analysis script.\n');
+    fprintf(fid, 'Analysis completed using DSC analysis script.\n');
     
     fclose(fid);
     
-    fprintf('Comprehensive results saved to: %s\n', output_filename);
+    fprintf('Results saved to: %s\n', output_filename);
 end
