@@ -1,247 +1,236 @@
-# DSC Analysis MATLAB Script
+# DSC Transition Analysis
 
-A comprehensive MATLAB script for analyzing Differential Scanning Calorimetry (DSC) data with automatic thermal transition detection and ISO standard compliance.
-
-## Overview
-
-This script provides automated analysis of DSC thermograms, detecting and quantifying thermal transitions including:
-- **Glass Transition Temperature (Tg)** - Following ISO 11357 standard - Step change inflection point detection
-- **Crystallization Temperature (Tc)** - Following ISO 11357 standard - Exothermic peak detection
-- **Melting Temperature (Tm)** - Following ISO 11357 standard - Endothermic peak detection
+A comprehensive MATLAB tool for analyzing Differential Scanning Calorimetry (DSC) data to detect and characterise thermal transitions in polymers.
 
 ## Features
 
-### 📊 Analysis Capabilities
-- **Automatic baseline correction** using spline fitting
-- **Multi-method transition detection** with ISO standard compliance
-- **Comprehensive derivative analysis** (1st and 2nd derivatives)
-- **Quantitative results** including onset temperatures, and peak temperatures
-- **Visual results presentation** with annotated plots
+- **Automated Thermal Transition Detection**: Glass transition (Tg), crystallisation (Tc), and melting (Tm) temperatures
+- **Adaptive Baseline Correction**: Intelligent spline-based baseline removal
+- **Interactive Analysis**: User-guided temperature range selection for precise analysis
+- **Multiple Polymer Types**: Optimized detection algorithms for amorphous, semi-crystalline, and crystalline polymers
+- **Comprehensive Results**: Detailed transition parameters including onset temperatures, peak temperatures, and enthalpies
+- **Visual Analysis**: Multi-panel plots showing thermogram, derivatives, and detected transitions
+- **Export Capabilities**: Save results to formatted text files for documentation
 
-### 🔧 Technical Features
-- Interactive parameter input with validation
-- Robust error handling for file reading
-- Flexible data format support
-- Comprehensive results export
-- Professional visualization with multiple plot types
+## Installation
+
+1. Clone this repository:
+```bash
+git clone https://github.com/acorn2984/DSC_Transition_Analysis.git
+```
+
+2. Navigate to the project directory:
+```bash
+cd DSC_Transition_Analysis
+```
+
+3. Open MATLAB and add the project folder to your path, or navigate to the folder in MATLAB's current directory.
 
 ## Requirements
 
 - MATLAB R2016b or later
-- Signal Processing Toolbox (for `smooth` function)
-- Statistics and Machine Learning Toolbox (optional, for enhanced analysis)
-
-## Installation
-
-1. Download the `DSC_Analysis.m` file
-2. Place it in your MATLAB working directory
-3. Ensure your DSC data files are accessible
+- Signal Processing Toolbox (recommended for enhanced smoothing functions)
 
 ## Usage
 
 ### Basic Usage
 
+1. Launch MATLAB and run the main function:
 ```matlab
 DSC_Analysis()
 ```
 
-### Input Parameters
+2. Follow the interactive prompts:
+   - Enter experimental parameters (temperature range, heating rate)
+   - Select polymer type for optimized analysis
+   - Specify your DSC data file
+   - Interactively select temperature ranges for transition analysis
 
-When you run the script, you'll be prompted to enter:
+### Input Data Format
 
-1. **Starting temperature (°C)** - Initial temperature of your DSC run
-2. **Heating rate (°C/min)** - Rate of temperature increase
-3. **Ending temperature (°C)** - Final temperature of the heating stage
-4. **Data filename** - Path to your DSC data file
+The tool expects DSC data files with the following column structure:
+- Column 1: Index/Sample number
+- Column 2: Time (seconds)
+- Column 3: Heat flow (W/g)
+- Column 4: Sample temperature (°C)
+- Column 5: Reference temperature (°C)
 
-### Data File Format
+The file should have 3 header lines which will be automatically skipped.
 
-The script expects a tab-delimited text file with the following structure:
-- **Header lines**: First 3 lines (automatically skipped)
-- **Column 1**: Sample identifier (not used)
-- **Column 2**: Time (seconds)
-- **Column 3**: Heat flow (W/g)
-- **Column 4**: Sample temperature (°C)
-- **Column 5**: Reference temperature (°C)
+### Example Workflow
 
-Example data format:
-```
-# DSC Data File
-# Sample: Universal DARK
-# Date: 2024-01-15
-Sample_1    0.00    0.1234    25.0    25.0
-Sample_1    1.00    0.1245    25.1    25.1
-Sample_1    2.00    0.1256    25.2    25.2
-...
+```matlab
+% Run the analysis
+DSC_Analysis()
+
+% Enter parameters when prompted:
+% Starting temperature: -50
+% Heating rate: 10
+% Ending temperature: 300
+% Polymer type: 2 (semi-crystalline)
+% Data file: your_dsc_data.txt
 ```
 
 ## Output
 
-### Visual Results
+The analysis provides:
 
-The script generates a comprehensive 3-panel plot:
+### Visual Output
+- **Main thermogram**: Original data with baseline correction and detected transitions
+- **First derivative plot**: Shows rate of heat flow change for Tg detection
+- **Second derivative plot**: Enhanced Tg detection using inflection point analysis
+- **Results table**: Summary of all detected transitions with parameters
 
-1. **Top Panel**: DSC thermogram with:
-   - Original heat flow data
-   - Spline baseline correction
-   - Baseline-corrected data
-   - Annotated transition temperatures
+### Numerical Results
+- **Glass Transition (Tg)**:
+  - Onset temperature
+  - Inflection point (primary Tg value)
+- **Crystallisation (Tc)**:
+  - Onset temperature
+  - Peak temperature
+- **Melting (Tm)**:
+  - Onset temperature
+  - Peak temperature
 
-2. **Middle Panel**: First derivative analysis
-   - Shows rate of heat flow change
-   - Highlights glass transition inflection point
+### File Export
+Results can be saved to a formatted text file containing:
+- Analysis parameters
+- Detected transition temperatures and enthalpies
+- Detection methods used
+- Analysis summary and polymer classification
 
-3. **Bottom Panel**: Second derivative analysis
-   - Enhanced glass transition detection
-   - Noise reduction through smoothing
+## Algorithm Details
 
-### Quantitative Results
+### Baseline Correction
+- **Adaptive Spline Fitting**: Automatically identifies stable baseline regions
+- **Transition Region Exclusion**: Removes peak areas from baseline calculation
+- **Robust Interpolation**: Uses spline or linear interpolation based on data density
+
+### Transition Detection
 
 #### Glass Transition (Tg)
-- **Inflection Point**: Primary value following ISO 11357
-- **Onset Temperature**: Extrapolated baseline method
-- **Peak Temperature**: Maximum derivative point
+- **Method**: ISO 11357 compliant second derivative minimum detection
+- **Fallback**: Maximum first derivative change method
+- **Parameters**: Onset, inflection point, peak
 
-#### Crystallization (Tc)
-- **Onset Temperature**: Deviation from baseline
-- **Peak Temperature**: Maximum exothermic point
+#### Crystallization/Melting Peaks
+- **Method**: Adaptive peak detection with noise filtering
+- **Baseline Integration**: Accurate enthalpy calculation using tangent baselines
+- **Multiple Peak Handling**: Selects most significant peak in specified range
 
-#### Melting (Tm)
-- **Onset Temperature**: Deviation from baseline
-- **Peak Temperature**: Maximum endothermic point
+### Quality Assurance
+- **Data Validation**: Checks for non-finite values and data consistency
+- **Noise Filtering**: Adaptive thresholding based on signal characteristics
+- **Method Reporting**: Documents detection algorithm used for each transition
 
-### Results Table
+## Supported Polymer Types
 
-An interactive table displays all detected transitions with:
-- Transition type and temperatures
-- Analysis method used
-- Color-coded results for easy interpretation
+1. **Amorphous Polymers**: Optimized for Tg detection only
+2. **Semi-crystalline Polymers**: Detects Tg, Tc, and Tm with appropriate temperature ranges
+3. **Crystalline Polymers**: Focuses on melting transitions
+4. **Unknown/Custom**: Analyzes full temperature range for all possible transitions
 
-## Analysis Methods
+## Examples
 
-### Glass Transition Detection
-- **Standard**: ISO 11357 compliance
-- **Method**: Minimum point in second derivative within 40-80°C range
-- **Validation**: Cross-referenced with first derivative analysis
-- **Baseline**: Spline-corrected data
-
-### Crystallization Detection
-- **Standard**: ISO 11357 compliance
-- **Method**: Baseline-corrected exothermic peak detection
-- **Range**: 70-140°C (customizable)
-- **Validation**: Minimum peak height and distance filtering
-- **Integration**: Trapezoidal rule with baseline subtraction
-
-### Melting Detection
-- **Standard**: ISO 11357 compliance
-- **Method**: Baseline-corrected endothermic peak detection
-- **Range**: 140-200°C (customizable)
-- **Validation**: Minimum peak height and distance filtering
-- **Integration**: Trapezoidal rule with baseline subtraction
-
-## Customization
-
-### Temperature Ranges
-Modify the analysis ranges in the `analyze_thermal_transitions_iso` function:
-
-```matlab
-% Glass transition range
-tg_range = find(temp_smooth >= 40 & temp_smooth <= 80);
-
-% Crystallization range
-tc_range = find(temp_smooth >= 70 & temp_smooth <= 140);
-
-% Melting range
-tm_range = find(temp_smooth >= 140 & temp_smooth <= 200);
+### Example 1: Semi-crystalline Polymer (PET)
+```
+Expected results:
+- Tg: ~80°C
+- Tc: ~120-140°C (if cold crystallization occurs)
+- Tm: ~250-260°C
 ```
 
-### Detection Sensitivity
-Adjust peak detection parameters:
-
-```matlab
-% Minimum peak height
-'MinPeakHeight', 0.01
-
-% Minimum peak distance
-'MinPeakDistance', 20
+### Example 2: Amorphous Polymer (PS)
+```
+Expected results:
+- Tg: ~100°C
+- No crystallization or melting peaks
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **File Reading Errors**
-   - Ensure file path is correct
-   - Check file format matches expected structure
-   - Verify file permissions
+**No transitions detected:**
+- Check temperature range covers expected transition regions
+- Verify data file format and column structure
+- Increase sample mass or reduce heating rate
+- Check for instrument calibration issues
 
-2. **No Transitions Detected**
-   - Check temperature ranges match your sample
-   - Adjust detection sensitivity parameters
-   - Verify baseline correction is appropriate
+**Noisy results:**
+- Apply additional smoothing by modifying `smooth_factor` in the code
+- Check for electromagnetic interference during measurement
+- Verify sample preparation (avoid air bubbles, ensure good thermal contact)
 
-3. **Noisy Results**
-   - Increase smoothing parameters
-   - Check data quality
-   - Verify heating rate is appropriate
-
-### Error Messages
-
-- `Error reading file`: Check file format and path
-- `Calculated heating duration exceeds available data`: Verify time/temperature parameters
-- `Too few baseline points`: Data may be too noisy or short
-
-## File Output
-
-### Results File
-Optional text file export containing:
-- Analysis parameters
-- Detected transition temperatures
-- Quantitative results
-- Analysis methods used
-- Timestamp and original filename
-
-### Naming Convention
-Results saved as: `[original_filename]_DSC_Results.txt`
-
-## Validation
-
-The script has been validated against:
-- ISO 11357 standard for glass transition temperature, crystallisation temperature, and melting temperature
-- Commercial DSC software results
-- Known reference materials
+**Incorrect transition assignments:**
+- Manually adjust temperature ranges during interactive selection
+- Consider polymer thermal history (annealing, processing conditions)
+- Compare with literature values for similar polymers
 
 ## Contributing
 
-Contributions are welcome! Please consider:
-- Adding support for additional file formats
-- Implementing new analysis methods
-- Improving detection algorithms
-- Adding unit tests
+Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+
+### Development Guidelines
+- Follow MATLAB coding best practices
+- Include comments for new functions
+- Test with various polymer types and data formats
+- Update documentation for new features
 
 ## License
 
-This script is provided as-is for research and educational purposes. Please cite appropriately if used in publications.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+```
+MIT License
 
-For issues, questions, or suggestions:
-1. Check the troubleshooting section
-2. Review the customization options
-3. Open an issue on GitHub with:
-   - MATLAB version
-   - Sample data (if possible)
-   - Error messages
-   - Expected vs. actual results
+Copyright (c) 2024 DSC Transition Analysis Contributors
 
-## Version History
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-- **v1.0**: Initial release with basic DSC analysis
-- **v1.1**: Shows the dsc graph plotted over temperature
-- **v1.2**: More user friendly, Improved onset temperature calculations, Improved results display
-- **v1.3**: Results looks better and provide key information needed
-- **v1.4**: Glass Transition Temperature Analysis is now correct as per ISO 11357 standards, Readability of the plots and tables has improved
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+## Citation
+
+If you use this software in your research, please cite it as follows:
+
+```bibtex
+@software{dsc_transition_analysis_2024,
+  title={DSC Transition Analysis},
+  author={Anjali Malik},
+  year={2024},
+  url={https://github.com/acorn2984/DSC_Transition_Analysis},
+  version={1.0},
+  note={MATLAB software for differential scanning calorimetry data analysis}
+}
+```
+
+## Acknowledgments
+
+- Built following ASTM and ISO standards for DSC analysis
+- Inspired by polymer thermal analysis best practices
+- Many thanks to Jai Gupta for being a supportive and insightful supervisor throughout my internship. I’ve greatly enjoyed learning about materials and polymers, and I’m truly grateful for the guidance and knowledge shared during this time.
+- Thanks to the materials science community for feedback and testing
+
+## Contact
+
+For questions, suggestions, or collaboration opportunities, please open an issue on GitHub or contact the maintainers.
 
 ---
 
-*This script is designed for thermal analysis research and should be validated against known standards for your specific applications.*
+**Keywords**: DSC, Differential Scanning Calorimetry, Thermal Analysis, Polymers, Glass Transition, Melting Temperature, Crystallization, MATLAB, Materials Science
