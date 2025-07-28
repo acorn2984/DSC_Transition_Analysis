@@ -222,7 +222,7 @@ If you use this software in your research, please cite it as follows:
 
 ## Acknowledgments
 
-- Built following ASTM and ISO standards for DSC analysis
+- Built following ISO standards for DSC analysis
 - Inspired by polymer thermal analysis best practices
 - Many thanks to Jai Gupta for being a supportive and insightful supervisor throughout my internship. I’ve greatly enjoyed learning about materials and polymers, and I’m truly grateful for the guidance and knowledge shared during this time.
 - Thanks to the materials science community for feedback and testing
